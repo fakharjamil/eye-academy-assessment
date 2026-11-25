@@ -1,0 +1,10 @@
+allowBuilds:
+  '@firebase/util': false
+  esbuild: true
+  lightningcss: true
+  protobufjs: false
+  re2: false
+  sharp: true
+  workerd: true
+packages:
+  - .
