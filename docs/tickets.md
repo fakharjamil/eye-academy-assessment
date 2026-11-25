@@ -25,7 +25,7 @@
 | **T1** Scaffold and sign-in | Email/password sign-in; the viva page is guarded | User A signs in and sees their email; a signed-out visit goes to `/login` | – |
 | **T2** Case and formatter (test first) | One place where a value, eye and unit become text | `pnpm test` green | Units only on bare numbers; `available` decides, so RAPD stays hidden |
 | **T3** Voice session | Ask aloud, hear and see the exact finding | "Right eye pressure" → 58 mmHg, right eye | A silent microphone was hard to spot, so a mic level meter was added. Semantic listening (so a pause doesn't end a turn) and lost-connection handling were added |
-| **T4** Follow-up and end | One follow-up, then results | One follow-up, then Viva complete | Bug: a reply was requested while one was still in progress, and the viva froze. Fixed with a reply queue. The "Done speaking" button was added |
+| **T4** Follow-up and end | One follow-up, then results | One follow-up, then Viva complete | Bug: a reply was requested while one was still in progress, and the viva froze. Fixed with a reply queue (with a 5-second safety net) |
 | **T5** Saved attempts and privacy (test first) | Reopen after refresh; owner only | Refresh restores it; user B is denied; rules tests pass | Rules deployed; the owner's id is in the link, so user B sees "Permission denied" |
 | **T6** Revision point (test first) | One point cited to a page | A missed sulfonamide check cites page 6; an unsupported gap gives "No support found" | `gpt-4.1-mini` misjudged gaps, so both text calls use `gpt-4.1` |
 | **T7** Latency and the three checks | Measure a voice turn; record the checks | Numbers and checks recorded | One sample read 298 s: the timer survived an unanswered turn. Fixed. The model once ended without a follow-up, so the end is now enforced in code |
@@ -51,4 +51,5 @@
 - A favicon.
 - The README in the brief's order, `CLAUDE.md`, and these docs.
 - Deployed to Cloudflare Workers.
+- Removed the "Done speaking" button: in live testing it caused double replies and a stuck reply queue. The queue now has a safety net.
 - **Next:** an end-to-end test on the Firebase emulators.

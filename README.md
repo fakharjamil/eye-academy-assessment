@@ -86,7 +86,7 @@ flowchart LR
 
 - **Findings.** The voice model never knows the values. It calls the tool `get_finding`, and the reply and the card both come from the case file. This is why 58 (right) and 18 (left) cannot get swapped. A test checks that no value appears in the examiner's instructions.
 - **Unavailable findings** are decided by the case's `available` flag. For example, RAPD has a value but is marked unavailable, so the examiner says it is not available and gives the reason.
-- **Turn-taking.** A status label shows whose turn it is: Examiner speaking, Your turn, Listening, Thinking. A **Done speaking** button and a text box are optional.
+- **Turn-taking.** A status label shows whose turn it is: Examiner speaking, Your turn, Listening, Thinking. A text box works without a microphone.
 - **Follow-up.** The app allows exactly one, and the viva cannot end before it.
 - **Saved attempts.** The transcript, findings, follow-up and revision point are saved after every turn at `users/{uid}/attempts/{id}`. Only the owner can read them; another user gets "Permission denied".
 - **The OpenAI key** stays on the server. The browser gets a 10-minute key, and only after its sign-in is verified.
@@ -179,7 +179,7 @@ I built this with Claude Code.
 
 ## Limitations
 
-- A long pause can end the trainee's turn early. **Done speaking** avoids it.
+- A long pause can end the trainee's turn early, and a short reply can take a few seconds to be picked up.
 - Medical words are sometimes misheard.
 - There is one case and no case picker.
 

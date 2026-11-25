@@ -30,7 +30,6 @@ function VivaPage() {
     start,
     stop,
     sendText,
-    finishSpeaking,
     copyDebugLog,
   } = useVivaSession()
   const [copied, setCopied] = useState<string | null>(null)
@@ -72,14 +71,6 @@ function VivaPage() {
           <div className="flex items-center gap-2">
             {live || phase === 'connecting' ? (
               <>
-                {/* Optional: the examiner also detects the end of an answer by itself. */}
-                <Button
-                  onClick={finishSpeaking}
-                  disabled={phase !== 'trainee' && phase !== 'your-turn'}
-                  title="Optional. The examiner also notices when you stop."
-                >
-                  Done speaking
-                </Button>
                 <Button variant="outline" onClick={stop}>
                   End viva
                 </Button>

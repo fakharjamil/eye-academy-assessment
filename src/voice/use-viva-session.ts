@@ -42,7 +42,6 @@ export function useVivaSession() {
   const followUpCount = useRef(0)
   const examinerSpeaking = useRef(false)
   const endRequested = useRef(false)
-  const traineeSpeaking = useRef(false)
 
   // Dev aid: the last 300 events in and out, so a stuck session can be diagnosed from a paste.
   const eventLog = useRef<string[]>([])
@@ -70,14 +69,28 @@ export function useVivaSession() {
   const responseActive = useRef(false)
   const responseQueued = useRef(false)
   const responseHadOutput = useRef(false)
-  const requestResponse = useCallback(() => {
-    if (responseActive.current) {
-      responseQueued.current = true
-      return
-    }
+  const queueWatchdog = useRef<number | null>(null)
+  const sendResponseCreate = useCallback(() => {
+    if (queueWatchdog.current !== null) window.clearTimeout(queueWatchdog.current)
+    queueWatchdog.current = null
+    responseQueued.current = false
     responseActive.current = true
     send({ type: 'response.create' })
   }, [send])
+  const queueResponse = useCallback(() => {
+    responseQueued.current = true
+    // Safety net: if the "done" event never arrives, never leave the examiner silent for good.
+    if (queueWatchdog.current === null) {
+      queueWatchdog.current = window.setTimeout(() => {
+        queueWatchdog.current = null
+        if (responseQueued.current) sendResponseCreate()
+      }, 5000)
+    }
+  }, [sendResponseCreate])
+  const requestResponse = useCallback(() => {
+    if (responseActive.current) queueResponse()
+    else sendResponseCreate()
+  }, [queueResponse, sendResponseCreate])
 
   const upsertTurn = useCallback((id: string, role: Turn['role'], update: (text: string) => string, final: boolean) => {
     setTurns((prev) => {
@@ -96,6 +109,8 @@ export function useVivaSession() {
     audio.current?.pause()
     meterStop.current?.()
     meterStop.current = null
+    if (queueWatchdog.current !== null) window.clearTimeout(queueWatchdog.current)
+    queueWatchdog.current = null
     setMicLevel(0)
     channel.current = null
     pc.current = null
@@ -174,19 +189,14 @@ export function useVivaSession() {
           responseActive.current = false
           // A reply with no voice and no tool call (e.g. cancelled) must not keep the timer running.
           if (!responseHadOutput.current) timer.current = null
-          if (responseQueued.current) {
-            responseQueued.current = false
-            requestResponse()
-          }
+          if (responseQueued.current) sendResponseCreate()
           break
         case 'input_audio_buffer.speech_started':
           // A new trainee turn: any timer from an unanswered earlier turn is meaningless now.
           timer.current = null
-          traineeSpeaking.current = true
           setPhase('trainee')
           break
         case 'input_audio_buffer.speech_stopped':
-          traineeSpeaking.current = false
           // Latency timer starts when the trainee stops speaking.
           timer.current = { start: performance.now(), kind: 'voice', finding: false }
           setPhase('thinking')
@@ -236,14 +246,8 @@ export function useVivaSession() {
         case 'error':
           console.error('Realtime error', event.error)
           if (event.error?.code === 'conversation_already_has_active_response') {
-            // Not the trainee's problem: retry once the current response finishes.
-            responseActive.current = true
-            responseQueued.current = true
-          } else if (
-            event.error?.code === 'input_audio_buffer_commit_empty' ||
-            /buffer too small/i.test(event.error?.message ?? '')
-          ) {
-            // "Done speaking" pressed just after the listener had already ended the turn: nothing to do.
+            // Another response is running: send ours when it is done (or after the safety-net delay).
+            queueResponse()
           } else {
             setError(event.error?.message ?? 'Voice service error')
           }
@@ -264,7 +268,6 @@ export function useVivaSession() {
     endRequested.current = false
     responseActive.current = false
     responseQueued.current = false
-    traineeSpeaking.current = false
     eventLog.current = []
     sessionStart.current = performance.now()
     setPhase('connecting')
@@ -343,19 +346,6 @@ export function useVivaSession() {
     [requestResponse, send, upsertTurn],
   )
 
-  /**
-   * "Done speaking": ends the trainee's turn now instead of waiting for the listener to decide.
-   * Also nudges the examiner if a reply never came.
-   */
-  const finishSpeaking = useCallback(() => {
-    if (traineeSpeaking.current) {
-      traineeSpeaking.current = false
-      send({ type: 'input_audio_buffer.commit' })
-      timer.current = { start: performance.now(), kind: 'voice', finding: false }
-    }
-    setPhase('thinking')
-    requestResponse()
-  }, [requestResponse, send])
 
   useEffect(() => teardown, [teardown])
 
@@ -384,7 +374,6 @@ export function useVivaSession() {
     start,
     stop: finish,
     sendText,
-    finishSpeaking,
     copyDebugLog,
   }
 }

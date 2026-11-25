@@ -64,5 +64,5 @@ has no voice or tool call.
 
 ## Known limitations seen in testing
 
-- A long pause mid-answer can still end the trainee's turn early; the "Done speaking" button avoids it.
+- A long pause mid-answer can still end the trainee's turn early.
 - In one run the viva ended without a follow-up; now enforced in code (see [`decisions.md`](decisions.md#6-the-follow-up-and-the-end-are-enforced-in-code)).
