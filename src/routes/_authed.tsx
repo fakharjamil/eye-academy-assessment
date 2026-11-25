@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { Link, Outlet, createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button'
 import { getCurrentUser, signOut, useAuth } from '#/lib/auth'
 
@@ -27,7 +27,15 @@ function AuthedLayout() {
   return (
     <div className="min-h-screen">
       <header className="flex items-center justify-between border-b px-4 py-3">
-        <span className="font-semibold">Eye Academy viva</span>
+        <nav className="flex items-center gap-4 text-sm">
+          <span className="font-semibold">Eye Academy viva</span>
+          <Link to="/viva" className="[&.active]:font-semibold [&.active]:underline">
+            New viva
+          </Link>
+          <Link to="/attempts" className="[&.active]:font-semibold [&.active]:underline">
+            My attempts
+          </Link>
+        </nav>
         <div className="flex items-center gap-3 text-sm">
           <span data-testid="user-email">{email}</span>
           <Button variant="outline" size="sm" onClick={onSignOut}>

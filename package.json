@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "deploy": "pnpm run build && wrangler deploy",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-eye-academy \"vitest run --config vitest.rules.config.ts\"",
+    "check": "pnpm typecheck && pnpm test && pnpm test:rules"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",

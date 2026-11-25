@@ -16,3 +16,4 @@ todos.json
 planning/
 .claude/
 .dev.vars*
+*-debug.log

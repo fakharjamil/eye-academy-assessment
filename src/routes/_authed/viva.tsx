@@ -1,4 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
+import { useAttemptRecorder } from '#/attempts/use-attempt-recorder'
+import { useAuth } from '#/lib/auth'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
@@ -27,6 +29,14 @@ function VivaPage() {
     sendText,
     finishSpeaking,
   } = useVivaSession()
+  const { user } = useAuth()
+  const { attemptId, saveError } = useAttemptRecorder(user?.uid, caseFile.case_id, {
+    phase,
+    turns,
+    revealed,
+    followUps,
+    latency,
+  })
   const live = !['idle', 'ended', 'error', 'connecting'].includes(phase)
   const lastLatency = latency.at(-1)
 
@@ -42,6 +52,11 @@ function VivaPage() {
           {notice && (
             <Alert className="border-amber-300 bg-amber-50 text-amber-900">
               <AlertDescription>{notice}</AlertDescription>
+            </Alert>
+          )}
+          {saveError && (
+            <Alert className="border-amber-300 bg-amber-50 text-amber-900">
+              <AlertDescription>{saveError}</AlertDescription>
             </Alert>
           )}
           {error && (
@@ -84,9 +99,20 @@ function VivaPage() {
               {revealed.length} finding{revealed.length === 1 ? '' : 's'} requested · {turns.length} turns
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-sm">
-            <span className="font-semibold">Follow-up question: </span>
-            {followUps[0] || 'None asked (the viva ended before the follow-up).'}
+          <CardContent className="space-y-2 text-sm">
+            <div>
+              <span className="font-semibold">Follow-up question: </span>
+              {followUps[0] || 'None asked (the viva ended before the follow-up).'}
+            </div>
+            {attemptId && user && (
+              <Link
+                to="/attempts/$ownerId/$attemptId"
+                params={{ ownerId: user.uid, attemptId }}
+                className="font-medium underline"
+              >
+                Saved. Open this attempt
+              </Link>
+            )}
           </CardContent>
         </Card>
       )}

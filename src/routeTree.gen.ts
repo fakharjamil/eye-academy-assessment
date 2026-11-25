@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedVivaRouteImport } from './routes/_authed/viva'
+import { Route as AuthedAttemptsIndexRouteImport } from './routes/_authed/attempts/index'
+import { Route as AuthedAttemptsOwnerIdAttemptIdRouteImport } from './routes/_authed/attempts/$ownerId.$attemptId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -33,16 +35,31 @@ const AuthedVivaRoute = AuthedVivaRouteImport.update({
   path: '/viva',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedAttemptsIndexRoute = AuthedAttemptsIndexRouteImport.update({
+  id: '/attempts/',
+  path: '/attempts/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedAttemptsOwnerIdAttemptIdRoute =
+  AuthedAttemptsOwnerIdAttemptIdRouteImport.update({
+    id: '/attempts/$ownerId/$attemptId',
+    path: '/attempts/$ownerId/$attemptId',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/viva': typeof AuthedVivaRoute
+  '/attempts/': typeof AuthedAttemptsIndexRoute
+  '/attempts/$ownerId/$attemptId': typeof AuthedAttemptsOwnerIdAttemptIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/viva': typeof AuthedVivaRoute
+  '/attempts': typeof AuthedAttemptsIndexRoute
+  '/attempts/$ownerId/$attemptId': typeof AuthedAttemptsOwnerIdAttemptIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,13 +67,23 @@ export interface FileRoutesById {
   '/_authed': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authed/viva': typeof AuthedVivaRoute
+  '/_authed/attempts/': typeof AuthedAttemptsIndexRoute
+  '/_authed/attempts/$ownerId/$attemptId': typeof AuthedAttemptsOwnerIdAttemptIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/viva'
+  fullPaths:
+    '/' | '/login' | '/viva' | '/attempts/' | '/attempts/$ownerId/$attemptId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/viva'
-  id: '__root__' | '/' | '/_authed' | '/login' | '/_authed/viva'
+  to: '/' | '/login' | '/viva' | '/attempts' | '/attempts/$ownerId/$attemptId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authed'
+    | '/login'
+    | '/_authed/viva'
+    | '/_authed/attempts/'
+    | '/_authed/attempts/$ownerId/$attemptId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,15 +122,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedVivaRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/attempts/': {
+      id: '/_authed/attempts/'
+      path: '/attempts'
+      fullPath: '/attempts/'
+      preLoaderRoute: typeof AuthedAttemptsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/attempts/$ownerId/$attemptId': {
+      id: '/_authed/attempts/$ownerId/$attemptId'
+      path: '/attempts/$ownerId/$attemptId'
+      fullPath: '/attempts/$ownerId/$attemptId'
+      preLoaderRoute: typeof AuthedAttemptsOwnerIdAttemptIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
   }
 }
 
 interface AuthedRouteChildren {
   AuthedVivaRoute: typeof AuthedVivaRoute
+  AuthedAttemptsIndexRoute: typeof AuthedAttemptsIndexRoute
+  AuthedAttemptsOwnerIdAttemptIdRoute: typeof AuthedAttemptsOwnerIdAttemptIdRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedVivaRoute: AuthedVivaRoute,
+  AuthedAttemptsIndexRoute: AuthedAttemptsIndexRoute,
+  AuthedAttemptsOwnerIdAttemptIdRoute: AuthedAttemptsOwnerIdAttemptIdRoute,
 }
 
 const AuthedRouteWithChildren =
