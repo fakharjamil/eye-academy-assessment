@@ -1,11 +1,10 @@
-# Reference note: page map (prep P3)
+# Reference note: page map
 
-Source: `data/glaucoma-note.pdf`, 10 pages. Text checked with macOS PDFKit on 25 Nov 2026.
-The prep script will use pdfjs, so re-check the same points with its output.
+Source: `data/glaucoma-note.pdf`, 10 pages. Text extracted with pdfjs by `pnpm prep:note`.
 
 ## Pages
 - Footer on every page: `Glaucoma and angle closure · Eye Academy reference note N`. N equals the page index on all 10 pages.
-- Header on every page: `eyeacademy Take-home reference note`. Strip it before chunking.
+- Header on every page: `eyeacademy Take-home reference note`. The prep script removes it.
 
 | Page | Content | Role |
 |---|---|---|
@@ -33,8 +32,8 @@ The prep script will use pdfjs, so re-check the same points with its output.
 | Why pilocarpine may not work at first | 5 | "The iris sphincter is often ischaemic" |
 | What if the pressure does not fall? | 6 | "If the IOP does not fall" |
 
-## Traps for the revision point (T6)
+## Traps for citation
 - "Sulfonamide" appears on pages 4, 6, 8 and 9. Only page 6 is the APAC acetazolamide check. Pages 4 and 8 are about topiramate and secondary angle closure; page 9 is the medicines table.
-- The acetazolamide sentence crosses pages 5 → 6. The page 6 chunk starts with "250 mg four times a day" and does not contain the word "acetazolamide". Page-bound chunks must still find it, so the query should include "sulfonamide allergy", and a chunk may carry a short tail of the previous page as context only (never cited).
-- Extracted text has spacing artefacts: "T erminology", "SL T", "IOP ,". The substring check must normalise whitespace (and spaces before punctuation), not just line breaks.
+- The acetazolamide sentence crosses pages 5 → 6. The page 6 chunk starts with "250 mg four times a day" and does not contain the word "acetazolamide". Chunks never cross a page, so search finds this one through "sulfonamide allergy" and it is cited as page 6.
+- PDF text has line breaks, hyphen splits and stray spaces before punctuation. The quote check normalises these, and nothing else.
 - Tables (page 5 differential, pages 9–10 medicines) extract with columns jumbled. Prefer prose chunks; a table chunk should rarely be the cited excerpt.

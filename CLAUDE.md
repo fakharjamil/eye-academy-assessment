@@ -23,7 +23,10 @@ Spoken ophthalmology viva: TanStack Start + Firebase Auth/Firestore + OpenAI Rea
 
 - Ask for a reply with `requestResponse()`: OpenAI allows one response at a time, and a tool result
   arrives while its response is still open, so the request queues until `response.done`.
-- Event names follow the GA API; see `docs/realtime-notes.md` before using an older example.
+- Event names follow the GA API. Older (beta) examples break: there is no `OpenAI-Beta` header; keys come from
+  `/v1/realtime/client_secrets` (top-level `value`); the SDP offer goes to `/v1/realtime/calls`; the session
+  needs `type: "realtime"`, with voice, VAD and transcription under `audio`; the assistant transcript event is
+  `response.output_audio_transcript.*`. `gpt-live-*` models use different events.
 - To diagnose a session, use the dev-only **Copy debug log** link on the viva page: every event in and
   out, with timings.
 - Latency: timer from `input_audio_buffer.speech_stopped` to `output_audio_buffer.started`. Samples are

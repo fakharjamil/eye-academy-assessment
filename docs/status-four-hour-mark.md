@@ -1,5 +1,7 @@
 # Status at the four-hour mark
 
+*Snapshot written when the clock stopped (tag `four-hour-mark`); not updated since. Current status: [README](../README.md).*
+
 Clock started 25 Nov 2026 15:25 PKT (tag `four-hour-start`) and stopped 18:17 PKT (tag `four-hour-mark`):
 2 hours 52 minutes of build time. Setup before the clock (scaffold, dependencies, docs check, PDF page
 map) is in the first commit.

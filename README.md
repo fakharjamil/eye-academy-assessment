@@ -11,10 +11,6 @@ Built with TanStack Start, Firebase Auth, Firestore and the OpenAI Realtime API.
 
 ![The viva page before starting](docs/screenshots/viva-start.png)
 
-![A real voice run: each finding is read back, and the card shows the eye, value and unit](docs/screenshots/findings.png)
-
-![Revision point after the viva, quoting page 4 of the reference note](docs/screenshots/revision-point.png)
-
 ## Status after four hours
 
 - **Build time:** 2 h 52 min, from 15:25 to 18:17 PKT on 25 Nov 2026. Git tags [`four-hour-start`](../../tree/four-hour-start) and [`four-hour-mark`](../../tree/four-hour-mark) mark the start and end.
@@ -103,7 +99,7 @@ More detail: [`docs/architecture.md`](docs/architecture.md) (diagrams, data, sec
 - It sends clear events that drive the turn label and the timer.
 - It is already in Eye Academy's stack.
 
-**Alternative considered: Gemini Live.** It is roughly 5× cheaper for audio. It needs our own audio streaming code, and its short-lived browser keys were still in preview.
+**Alternative considered: Gemini Live.** Its published audio prices are lower (not measured here). It needs our own audio streaming code, and its short-lived browser keys were still in preview.
 
 **Revision point:** `gpt-4.1` at temperature 0, with `text-embedding-3-small` embeddings. I tried `gpt-4.1-mini` first, but it called a correct step a mistake.
 
@@ -116,15 +112,19 @@ The timer starts when the server detects that the trainee stopped speaking (`inp
 | Finding lookup | 5 | 1582 ms | 1769 ms | 1838 ms |
 | Plain reply | 2 | 990 ms | – | 1523 ms |
 
-Times are saved with each attempt and logged for developers. Trainees do not see them.
+5 and 2 turns, so the numbers are indicative. The wait for the end of speech happens before the timer starts and is not included. Times are saved with each attempt and logged for developers; trainees do not see them.
 
 ## Three checks
 
 | Check | Expected | Observed |
 |---|---|---|
-| Available finding: "right eye pressure", "and the left" | Right eye 58 mmHg, left eye 18 mmHg | ✅ |
-| Unavailable finding: right gonioscopy, RAPD, CT head | Not available with the reason, and "not part of this case" for CT head | ✅ (CT head was heard as "city head" and still answered correctly) |
+| Available finding: "right eye pressure", "and the left" | Right eye 58 mmHg, left eye 18 mmHg | ✅ Examiner: "Right eye, Intraocular pressure: 58 mmHg." / "Left eye, …: 18 mmHg." Cards matched |
+| Unavailable finding: right gonioscopy, RAPD, CT head | Not available with the reason; "not part of this case" for CT head | ✅ "Right eye, Gonioscopy: not available. No view: corneal oedema." RAPD not available with its reason. CT head (heard as "city head"): "That is not part of this case." |
 | Citation: an answer that misses the sulfonamide allergy check | Page 6, with a quote about sulfonamide | ✅ Retrieved pages 6, 9, 8, 3. Cited page 6: "Check for sulfonamide allergy, kidney disease, low potassium and sickle cell disease before giving it." |
+
+![A real voice run: each finding is read back, and the card shows the eye, value and unit](docs/screenshots/findings.png)
+
+![Revision point after the viva, quoting page 4 of the reference note](docs/screenshots/revision-point.png)
 
 All runs, the commands to repeat them, and the "No support found" case: [`docs/checks.md`](docs/checks.md).
 
@@ -158,7 +158,7 @@ I built this with Claude Code.
 - RAPD hidden
 - unknown findings
 
-**How I verified it:** 9 unit tests, `pnpm check:findings`, and a voice run where every answer and card matched.
+**How I verified it:** 9 of the 28 unit tests (formatter and case file), `pnpm check:findings`, and a voice run where every answer and card matched.
 
 ## Improvements
 
@@ -173,7 +173,6 @@ I built this with Claude Code.
 | How many follow-up questions | `MAX_FOLLOW_UPS` in `src/voice/session-config.ts` | `pnpm test` |
 | The reference PDF | `data/glaucoma-note.pdf` | `pnpm prep:note`, then `pnpm check:citation` |
 
-A dev-only **Copy debug log** link on the viva page copies every voice event with timings, for debugging.
 
 ## Limitations
 
@@ -193,5 +192,5 @@ src/attempts/    saving and loading attempts
 src/routes/      login, viva, attempts list, attempt page
 scripts/         prep-note, check-findings, check-citation
 tests/rules/     Firestore rules tests (emulator)
-docs/            architecture, decisions, tickets, checks, note page map, Realtime notes
+docs/            architecture, decisions, tickets, checks, note page map
 ```

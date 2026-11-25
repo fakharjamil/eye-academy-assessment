@@ -4,12 +4,8 @@ Each entry covers the choice, why it was made, and the alternative that was cons
 
 ## 1. Voice model: OpenAI Realtime (`gpt-realtime-2.1`)
 
-- **Why:**
-  - Tool calls are reliable, and every finding depends on one.
-  - WebRTC handles the microphone, echo cancellation and playback.
-  - Its events (`speech_stopped`, `output_audio_buffer.started`) drive the turn label and the timer directly.
-  - It is already in Eye Academy's stack.
-- **Alternative:** Gemini Live. It is roughly 5× cheaper for audio. It needs our own audio streaming over WebSocket, and its short-lived browser keys were still in preview.
+- **Why:** reliable tool calls (every finding depends on one), WebRTC handles mic and playback, and its events drive the turn label and timer. Full comparison: [README, Model choice](../README.md#model-choice).
+- **Alternative:** Gemini Live, with lower published audio prices but its own audio streaming code.
 - **When to revisit:** if cost matters more than integration time, try Gemini Live first.
 
 ## 2. Audio goes straight from the browser to OpenAI (WebRTC)
@@ -19,8 +15,8 @@ Each entry covers the choice, why it was made, and the alternative that was cons
 
 ## 3. The voice model never gets finding values
 
-- **Why:** a model that "knows" 58 and 18 can swap them. Instead, the examiner instructions list only the finding ids and labels. Every value comes from `get_finding`, which is answered by the formatter, and a test checks that no value appears in the instructions.
-- **Alternative:** putting the case into the prompt. It is simpler, but the model can then misread a value and nothing would catch it.
+- **Why:** a model that "knows" 58 and 18 can swap them. It sees only ids and labels; every value comes from `get_finding`. A test checks no value is in the instructions.
+- **Alternative:** the case in the prompt. Simpler, but a misread value would go unnoticed.
 
 ## 4. Sign-in check with `jose`, not `firebase-admin`
 
@@ -34,10 +30,8 @@ Each entry covers the choice, why it was made, and the alternative that was cons
 
 ## 6. The follow-up and the end are enforced in code
 
-- **Why:** the brief requires one spoken follow-up, and in testing the model once ended without asking it. Now:
-  - The model must call `ask_follow_up`. The app allows exactly one.
-  - `end_viva` is refused until the follow-up has been asked.
-- **Alternative:** relying on the prompt alone. That is what failed in testing.
+- **Why:** the brief requires one spoken follow-up, and in testing the model once ended without asking it. A prompt can't guarantee it; code can (`src/voice/follow-up.ts`).
+- **Alternative:** the prompt alone, which is what failed.
 
 ## 7. The owner's id is in the attempt link
 
@@ -46,19 +40,14 @@ Each entry covers the choice, why it was made, and the alternative that was cons
 
 ## 8. Hybrid search, with chunks that never cross a page
 
-- **Why:**
-  - Keyword search (BM25) finds exact drug names like "acetazolamide".
-  - Embeddings find paraphrases.
-  - Each chunk belongs to exactly one page, so every citation has one page number.
-  - The prep script stops if a printed page number doesn't match the physical page.
-- **Alternative:** embeddings only. These miss exact terms. Whole-page chunks give imprecise quotes.
+- **Why:** keywords (BM25) find exact drug names; embeddings find paraphrases. A chunk never crosses a page, so every citation has one page number.
+- **Alternative:** embeddings only (miss exact terms) or whole pages (imprecise quotes). How it runs: [architecture](architecture.md#after-the-viva-revision-point).
 
 ## 9. The quote is checked by code, using `gpt-4.1`
 
-- **Why:** a model can paraphrase or invent a quote. Code accepts the revision point only if the excerpt is on the cited, retrieved page word for word, and tolerates only line breaks, hyphen splits and case. Otherwise the trainee sees "No support found in the note".
-- **Model:** `gpt-4.1` at temperature 0, so the same transcript gives the same point. `gpt-4.1-mini` was tried first and called a correct step ("lie her flat") a mistake.
+- **Why:** a model can paraphrase or invent a quote, so code accepts it only if it is on the cited, retrieved page word for word. Otherwise: "No support found in the note".
+- **Model:** `gpt-4.1` at temperature 0 (same transcript, same point). `gpt-4.1-mini` called a correct step a mistake.
 
 ## 10. Response times are saved and logged, not shown
 
-- **Why:** the brief asks us to measure a voice turn, not to show timings to trainees. Each sample is saved with the attempt and logged for developers. The dev-only debug log includes them.
-- **Method:** the timer starts at `input_audio_buffer.speech_stopped` and stops at `output_audio_buffer.started`, using `performance.now()`. It resets when the trainee speaks again, so an unanswered turn cannot inflate it.
+- **Why:** the brief asks to measure a voice turn, not to show timings to trainees. Samples are saved with each attempt and logged for developers. Method and numbers: [`checks.md`](checks.md#latency).

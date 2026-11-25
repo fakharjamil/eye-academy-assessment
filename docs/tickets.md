@@ -14,7 +14,7 @@
 ## Before the clock (not counted)
 
 - **Accounts and tools:** Firebase project, OpenAI key, Java for the Firestore emulator.
-- **Docs check:** the current OpenAI Realtime model, endpoints and event names, in [`realtime-notes.md`](realtime-notes.md).
+- **Docs check:** the current OpenAI Realtime model, endpoints and event names (summary in `CLAUDE.md`).
 - **PDF page map:** which pages hold acute angle closure, and where the distractors are, in [`note-page-map.md`](note-page-map.md).
 - **Scaffold:** TanStack Start with Tailwind, shadcn/ui and the Cloudflare adapter, plus the case data.
 
@@ -22,14 +22,14 @@
 
 | Ticket | Goal | Done when | What actually happened |
 |---|---|---|---|
-| **T1** Scaffold and sign-in | Email/password sign-in; the viva page is guarded | User A signs in and sees their email; a signed-out visit goes to `/login` | The shadcn CLI installed an unrelated `cn` package; it was removed. An old dev server without config was restarted |
-| **T2** Case and formatter (test first) | One place where a value, eye and unit become text | `pnpm test` green | 9 tests. Units are added only to bare numbers ("5 mm", never "5 mm mm"). RAPD stays hidden because `available` decides |
-| **T3** Voice session | Ask aloud, hear and see the exact finding | "Right eye pressure" → 58 mmHg, right eye | The first test heard nothing: the Mac's microphone permission was off. A mic level meter now makes silence visible. Semantic listening and lost-connection handling were added |
+| **T1** Scaffold and sign-in | Email/password sign-in; the viva page is guarded | User A signs in and sees their email; a signed-out visit goes to `/login` | – |
+| **T2** Case and formatter (test first) | One place where a value, eye and unit become text | `pnpm test` green | Units only on bare numbers; `available` decides, so RAPD stays hidden |
+| **T3** Voice session | Ask aloud, hear and see the exact finding | "Right eye pressure" → 58 mmHg, right eye | A silent microphone was hard to spot, so a mic level meter was added. Semantic listening (so a pause doesn't end a turn) and lost-connection handling were added |
 | **T4** Follow-up and end | One follow-up, then results | One follow-up, then Viva complete | Bug: a reply was requested while one was still in progress, and the viva froze. Fixed with a reply queue. The "Done speaking" button was added |
-| **T5** Saved attempts and privacy (test first) | Reopen after refresh; owner only | Refresh restores it; user B is denied; rules tests pass | 4 rules tests on the emulator. Rules deployed. The owner's id is in the link, so user B sees "Permission denied" |
-| **T6** Revision point (test first) | One point cited to a page | A missed sulfonamide check cites page 6; an unsupported gap gives "No support found" | The quote check has 7 tests. `gpt-4.1-mini` misjudged gaps, so both text calls use `gpt-4.1` |
+| **T5** Saved attempts and privacy (test first) | Reopen after refresh; owner only | Refresh restores it; user B is denied; rules tests pass | Rules deployed; the owner's id is in the link, so user B sees "Permission denied" |
+| **T6** Revision point (test first) | One point cited to a page | A missed sulfonamide check cites page 6; an unsupported gap gives "No support found" | `gpt-4.1-mini` misjudged gaps, so both text calls use `gpt-4.1` |
 | **T7** Latency and the three checks | Measure a voice turn; record the checks | Numbers and checks recorded | One sample read 298 s: the timer survived an unanswered turn. Fixed. The model once ended without a follow-up, so the end is now enforced in code |
-| **T8** Stop | Tag and push | `four-hour-mark` on GitHub | Status note written |
+| **T8** Stop | Tag and push | `four-hour-mark` on GitHub | – |
 
 ## Timeline (25 Nov 2026, PKT)
 

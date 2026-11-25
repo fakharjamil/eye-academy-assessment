@@ -32,9 +32,7 @@ command plus the result of a real voice run.
 
 ## Check 3: citation support
 
-Pipeline: biggest gap against the examiner key points → hybrid search (BM25 + embeddings) over
-page-bound chunks, top 4 → one point quoting one passage → code accepts it only if the excerpt is on
-the cited, retrieved page word for word.
+How the revision point is built: [`architecture.md`](architecture.md#after-the-viva-revision-point).
 
 | Input | Expected | Retrieved pages | Observed |
 |---|---|---|---|
@@ -67,4 +65,4 @@ has no voice or tool call.
 ## Known limitations seen in testing
 
 - A long pause mid-answer can still end the trainee's turn early; the "Done speaking" button avoids it.
-- In one run the viva ended without a follow-up. The app now refuses `end_viva` until `ask_follow_up` has been used.
+- In one run the viva ended without a follow-up; now enforced in code (see [`decisions.md`](decisions.md#6-the-follow-up-and-the-end-are-enforced-in-code)).
