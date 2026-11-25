@@ -127,16 +127,16 @@ function VivaPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-[1fr_16rem]">
+      <div className="mb-8 grid gap-4 md:grid-cols-[1fr_16rem]">
         <section aria-label="Transcript">
           <h2 className="mb-2 text-sm font-semibold">Transcript</h2>
-          <div ref={transcriptBox} className="max-h-[55vh] overflow-y-auto pr-1">
+          <div ref={transcriptBox} className="max-h-[calc(100dvh-26rem)] min-h-40 overflow-y-auto pr-1 pb-10">
             <Transcript turns={turns} />
           </div>
         </section>
         <section aria-label="Findings revealed">
           <h2 className="mb-2 text-sm font-semibold">Findings</h2>
-          <div ref={findingsBox} className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
+          <div ref={findingsBox} className="max-h-[calc(100dvh-26rem)] min-h-40 space-y-2 overflow-y-auto pr-1 pb-10">
             {revealed.length ? (
               revealed.map((f, i) => <FindingCard key={`${f.id}-${i}`} finding={f} />)
             ) : (
