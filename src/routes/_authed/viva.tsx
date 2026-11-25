@@ -45,10 +45,13 @@ function VivaPage() {
   const revision = useRevisionPoint(phase === 'ended', attemptId, turns)
   const live = !['idle', 'ended', 'error', 'connecting'].includes(phase)
   const lastTurn = turns.at(-1)
-  const transcriptEnd = useFollowLatest(live, `${turns.length}:${lastTurn?.text.length ?? 0}:${revealed.length}`)
+  const transcriptBox = useFollowLatest<HTMLDivElement>(`${turns.length}:${lastTurn?.text.length ?? 0}`)
+  const findingsBox = useFollowLatest<HTMLDivElement>(String(revealed.length))
 
   return (
     <div className="space-y-4">
+      {/* The controls stay on screen while the transcript scrolls underneath. */}
+      <div className="sticky top-0 z-10 pt-2">
       <Card>
         <CardHeader>
           <CardTitle>Case {caseFile.case_id}</CardTitle>
@@ -95,6 +98,7 @@ function VivaPage() {
           {live && <TypedInput onSend={sendText} disabled={phase === 'examiner'} />}
         </CardContent>
       </Card>
+      </div>
 
       {phase === 'ended' && (
         <Card data-testid="viva-results">
@@ -126,12 +130,13 @@ function VivaPage() {
       <div className="grid gap-4 md:grid-cols-[1fr_16rem]">
         <section aria-label="Transcript">
           <h2 className="mb-2 text-sm font-semibold">Transcript</h2>
-          <Transcript turns={turns} />
-          <div ref={transcriptEnd} aria-hidden />
+          <div ref={transcriptBox} className="max-h-[55vh] overflow-y-auto pr-1">
+            <Transcript turns={turns} />
+          </div>
         </section>
         <section aria-label="Findings revealed">
           <h2 className="mb-2 text-sm font-semibold">Findings</h2>
-          <div className="space-y-2">
+          <div ref={findingsBox} className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
             {revealed.length ? (
               revealed.map((f, i) => <FindingCard key={`${f.id}-${i}`} finding={f} />)
             ) : (

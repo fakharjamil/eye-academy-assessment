@@ -1,27 +1,29 @@
 import { useEffect, useRef } from 'react'
 
-const NEAR_BOTTOM_PX = 160
+const NEAR_BOTTOM_PX = 80
 
 /**
- * Keeps the newest transcript line in view while the viva is live, but only if the trainee is
- * already at the bottom: scrolling up to reread something is never interrupted.
+ * For a scrolling box (transcript, findings): when new content arrives, scroll the box to its
+ * newest line, like a chat. If the trainee has scrolled up inside the box to reread, leave it alone.
  */
-export function useFollowLatest(active: boolean, contentKey: string) {
-  const anchor = useRef<HTMLDivElement>(null)
+export function useFollowLatest<T extends HTMLElement>(contentKey: string) {
+  const box = useRef<T>(null)
   const following = useRef(true)
 
   useEffect(() => {
+    const el = box.current
+    if (!el) return
     const onScroll = () => {
-      const fromBottom = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight)
-      following.current = fromBottom < NEAR_BOTTOM_PX
+      following.current = el.scrollHeight - (el.scrollTop + el.clientHeight) < NEAR_BOTTOM_PX
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
   }, [])
 
   useEffect(() => {
-    if (active && following.current) anchor.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [active, contentKey])
+    const el = box.current
+    if (el && following.current) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [contentKey])
 
-  return anchor
+  return box
 }
