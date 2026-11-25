@@ -14,7 +14,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "test:rules": "firebase emulators:exec --only firestore --project demo-eye-academy \"vitest run --config vitest.rules.config.ts\"",
-    "check": "pnpm typecheck && pnpm test && pnpm test:rules"
+    "check": "pnpm typecheck && pnpm test && pnpm test:rules",
+    "prep:note": "tsx scripts/prep-note.ts",
+    "check:citation": "tsx scripts/check-citation.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",

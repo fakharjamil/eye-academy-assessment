@@ -15,6 +15,7 @@ import {
   type Timestamp,
 } from 'firebase/firestore'
 import { getFirebaseApp } from '#/lib/firebase'
+import type { RevisionPoint } from '#/server/revision-core'
 import type { LatencySample, RevealedFinding, Turn } from '#/voice/use-viva-session'
 
 export type AttemptStatus = 'in_progress' | 'completed' | 'interrupted'
@@ -27,6 +28,7 @@ export type AttemptData = {
   revealed: RevealedFinding[]
   followUps: string[]
   latency: LatencySample[]
+  revision?: RevisionPoint | null
 }
 
 export type Attempt = AttemptData & { id: string; ownerId: string; createdAt: Date | null; updatedAt: Date | null }
@@ -75,6 +77,7 @@ function toAttempt(ownerId: string, id: string, data: Record<string, any>): Atte
     revealed: data.revealed ?? [],
     followUps: data.followUps ?? [],
     latency: data.latency ?? [],
+    revision: data.revision ?? null,
     createdAt: date(data.createdAt),
     updatedAt: date(data.updatedAt),
   }

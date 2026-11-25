@@ -1,5 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useAttemptRecorder } from '#/attempts/use-attempt-recorder'
+import { useRevisionPoint } from '#/attempts/use-revision-point'
+import { RevisionCard } from '#/components/viva/attempt-parts'
 import { useAuth } from '#/lib/auth'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
@@ -37,6 +39,7 @@ function VivaPage() {
     followUps,
     latency,
   })
+  const revision = useRevisionPoint(phase === 'ended', attemptId, turns)
   const live = !['idle', 'ended', 'error', 'connecting'].includes(phase)
   const lastLatency = latency.at(-1)
 
@@ -104,6 +107,7 @@ function VivaPage() {
               <span className="font-semibold">Follow-up question: </span>
               {followUps[0] || 'None asked (the viva ended before the follow-up).'}
             </div>
+            <RevisionCard revision={revision.point} loading={revision.loading} error={revision.error} />
             {attemptId && user && (
               <Link
                 to="/attempts/$ownerId/$attemptId"
