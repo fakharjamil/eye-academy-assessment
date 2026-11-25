@@ -26,6 +26,8 @@ export function useVivaSession() {
   const [revealed, setRevealed] = useState<RevealedFinding[]>([])
   const [latency, setLatency] = useState<LatencySample[]>([])
   const [error, setError] = useState<string | null>(null)
+  /** Temporary warning, e.g. an unstable connection that may recover. */
+  const [notice, setNotice] = useState<string | null>(null)
   const [micName, setMicName] = useState<string | null>(null)
   const [micLevel, setMicLevel] = useState(0)
   const meterStop = useRef<(() => void) | null>(null)
@@ -161,6 +163,7 @@ export function useVivaSession() {
 
   const start = useCallback(async () => {
     setError(null)
+    setNotice(null)
     setTurns([])
     setRevealed([])
     setLatency([])
@@ -173,6 +176,19 @@ export function useVivaSession() {
 
       const connection = new RTCPeerConnection()
       pc.current = connection
+      // A brief drop ("disconnected") often recovers by itself; "failed" does not.
+      connection.onconnectionstatechange = () => {
+        if (pc.current !== connection) return
+        const state = connection.connectionState
+        if (state === 'disconnected') setNotice('Connection unstable. Trying to reconnect…')
+        if (state === 'connected') setNotice(null)
+        if (state === 'failed') {
+          teardown()
+          setNotice(null)
+          setError('Connection lost. Your transcript so far is kept. Press Start again when you are back online.')
+          setPhase('error')
+        }
+      }
       const player = audio.current ?? new Audio()
       player.autoplay = true
       audio.current = player
@@ -229,7 +245,19 @@ export function useVivaSession() {
 
   useEffect(() => teardown, [teardown])
 
-  return { phase, turns, revealed, latency, error, micName, micLevel, start, stop: finish, sendText }
+  // The browser knows about a lost network before WebRTC does, so warn early.
+  useEffect(() => {
+    const offline = () => pc.current && setNotice('You are offline. Waiting for the connection to come back…')
+    const online = () => setNotice(null)
+    window.addEventListener('offline', offline)
+    window.addEventListener('online', online)
+    return () => {
+      window.removeEventListener('offline', offline)
+      window.removeEventListener('online', online)
+    }
+  }, [])
+
+  return { phase, turns, revealed, latency, error, notice, micName, micLevel, start, stop: finish, sendText }
 }
 
 /** Reports the microphone input level (0–1) about ten times a second, so silence is visible. */

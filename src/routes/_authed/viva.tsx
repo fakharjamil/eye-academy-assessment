@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_authed/viva')({
 
 function VivaPage() {
   const caseFile = loadCase()
-  const { phase, turns, revealed, latency, error, micName, micLevel, start, stop, sendText } =
+  const { phase, turns, revealed, latency, error, notice, micName, micLevel, start, stop, sendText } =
     useVivaSession()
   const live = !['idle', 'ended', 'error', 'connecting'].includes(phase)
   const lastLatency = latency.at(-1)
@@ -26,6 +26,11 @@ function VivaPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <TurnIndicator phase={phase} />
+          {notice && (
+            <Alert className="border-amber-300 bg-amber-50 text-amber-900">
+              <AlertDescription>{notice}</AlertDescription>
+            </Alert>
+          )}
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>

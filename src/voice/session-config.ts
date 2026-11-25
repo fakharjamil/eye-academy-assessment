@@ -68,11 +68,11 @@ ${notes.key_points.map((p) => `- ${p}`).join('\n')}`
     tool_choice: 'auto' as const,
     audio: {
       input: {
+        // Semantic VAD judges whether the trainee has finished a thought, so a pause to think
+        // does not end their turn. Low eagerness = wait longer before replying.
         turn_detection: {
-          type: 'server_vad' as const,
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500,
+          type: 'semantic_vad' as const,
+          eagerness: 'low' as const,
           create_response: true,
           interrupt_response: true,
         },

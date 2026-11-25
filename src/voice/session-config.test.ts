@@ -20,8 +20,8 @@ describe('buildSessionConfig', () => {
     expect(config.tools.map((t) => t.name)).toContain('end_viva')
   })
 
-  it('turns on server VAD and trainee transcription', () => {
-    expect(config.audio.input.turn_detection.type).toBe('server_vad')
+  it('waits for the trainee to finish a thought, and transcribes them', () => {
+    expect(config.audio.input.turn_detection).toMatchObject({ type: 'semantic_vad', eagerness: 'low' })
     expect(config.audio.input.transcription.model).toBeTruthy()
   })
 })
