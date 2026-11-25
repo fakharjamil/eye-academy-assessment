@@ -28,7 +28,7 @@ Checked on 25 Nov 2026 against developers.openai.com. Items marked UNCONFIRMED w
   "tool_choice": "auto",
   "audio": {
     "input": {
-      "turn_detection": { "type": "server_vad", "threshold": 0.5, "prefix_padding_ms": 300, "silence_duration_ms": 500, "create_response": true, "interrupt_response": true },
+      "turn_detection": { "type": "semantic_vad", "eagerness": "low", "create_response": true, "interrupt_response": true },
       "transcription": { "model": "gpt-4o-mini-transcribe" }
     },
     "output": { "voice": "marin" }
@@ -41,7 +41,7 @@ Checked on 25 Nov 2026 against developers.openai.com. Items marked UNCONFIRMED w
 ## Events we use
 | Purpose | Event |
 |---|---|
-| Trainee starts / stops talking | `input_audio_buffer.speech_started` / `input_audio_buffer.speech_stopped` (timer start) |
+| Trainee starts / stops talking (semantic VAD; `server_vad` uses silence only) | `input_audio_buffer.speech_started` / `input_audio_buffer.speech_stopped` (timer start) |
 | Tool call ready | `response.function_call_arguments.done` (`call_id`, `name`, `arguments` JSON string) |
 | Send tool result | `conversation.item.create` `{type:"function_call_output", call_id, output}` then `response.create` |
 | Examiner audio starts / stops (WebRTC only) | `output_audio_buffer.started` (timer stop) / `output_audio_buffer.stopped` / `.cleared` |

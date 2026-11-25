@@ -1,83 +1,53 @@
-# Eye Academy voice viva: implementation tickets
+# How the work was split
 
-Source of truth for the build. Where this file and `plan.md` differ, this file wins.
+## Why these tickets
 
-## Decisions (24 Nov 2026)
-- Firebase: real project (free plan) + emulator for rules tests.
-- Voice: OpenAI Realtime over WebRTC. Named alternative: Gemini Live.
-- Sign-in: email/password only, two test users (A and B).
-- Deploy: Cloudflare Workers (free plan). ID tokens verified with `jose` against Google's public keys, because `firebase-admin` targets Node and may not run on Workers.
-- Time: one focused 4-hour build session, tagged `four-hour-mark`. Setup before it and write-up and extras after it are reported separately in the README.
+- **One working slice per ticket.** Each ticket ends in something you can try by hand: sign in, a finding read aloud, a saved attempt. It never ends in a half-built layer.
+- **Risk first.** The findings formatter (T2) came before voice (T3), so voice was built on code already proven correct.
+- **Test first where a mistake would be serious:**
+  - the formatter (a wrong eye or value)
+  - the privacy rules (another trainee's attempt)
+  - the quote check (an invented citation)
+- **One commit per ticket**, so the history shows the order and the timing.
+- **Never cut:** the formatter tests, the owner-only rules, the quote check, and the four-hour tag.
 
-## Timeline (Pakistan time)
-Deadline: 25 Nov 23:59 GMT = **26 Nov 04:59 PKT**.
-- Before the session: prep checklist P1-P4 (not counted).
-- 4-hour session: start **no later than 22:00 PKT on 25 Nov**, ideally 21:00.
-- After the session: A1-A4, then submit by email.
+## Before the clock (not counted)
 
-## Prep (before the clock, not counted)
-- **P1 Accounts and tools.** Firebase project: Auth email/password on, Firestore created, web app config copied. Users A and B created. OpenAI key with credit. Cloudflare account and `wrangler login`. Node 20+, pnpm, Firebase CLI, Java 11+ (the Firestore emulator needs it). Empty GitHub repo the reviewers can open.
-- **P2 Docs check.** Confirm on the OpenAI docs: current Realtime model name, ephemeral key endpoint, WebRTC connect URL, session config shape (tools, server VAD, input transcription field), and event names: `input_audio_buffer.speech_started/stopped`, `response.function_call_arguments.done`, `output_audio_buffer.started/stopped`, input and output transcript events. Note them in `docs/realtime-notes.md`.
-- **P3 PDF page map.** Extract text per page and confirm which pages hold acute angle closure (expected 3-6) and that "sulfonamide allergy" before acetazolamide is on page 6.
-- **P4 Tickets.** Copy this file into the repo as `docs/tickets.md`.
+- **Accounts and tools:** Firebase project, OpenAI key, Java for the Firestore emulator.
+- **Docs check:** the current OpenAI Realtime model, endpoints and event names, in [`realtime-notes.md`](realtime-notes.md).
+- **PDF page map:** which pages hold acute angle closure, and where the distractors are, in [`note-page-map.md`](note-page-map.md).
+- **Scaffold:** TanStack Start with Tailwind, shadcn/ui and the Cloudflare adapter, plus the case data.
 
-## 4-hour session (240 min, one commit per ticket)
+## The four hours
 
-### T1 Scaffold and sign-in (30 min)
-- TanStack Start app with pnpm, strict TypeScript, Tailwind 4, shadcn/ui.
-- Firebase client init from env. `/login` with email/password. Auth context.
-- `beforeLoad` guard on `/viva` and `/attempts*` that redirects to `/login`. Sign-out button.
-- **Done when:** user A signs in, sees their email on `/viva`, signs out; a signed-out visit to `/viva` lands on `/login`.
+| Ticket | Goal | Done when | What actually happened |
+|---|---|---|---|
+| **T1** Scaffold and sign-in | Email/password sign-in; the viva page is guarded | User A signs in and sees their email; a signed-out visit goes to `/login` | The shadcn CLI installed an unrelated `cn` package; it was removed. An old dev server without config was restarted |
+| **T2** Case and formatter (test first) | One place where a value, eye and unit become text | `pnpm test` green | 9 tests. Units are added only to bare numbers ("5 mm", never "5 mm mm"). RAPD stays hidden because `available` decides |
+| **T3** Voice session | Ask aloud, hear and see the exact finding | "Right eye pressure" → 58 mmHg, right eye | The first test heard nothing: the Mac's microphone permission was off. A mic level meter now makes silence visible. Semantic listening and lost-connection handling were added |
+| **T4** Follow-up and end | One follow-up, then results | One follow-up, then Viva complete | Bug: a reply was requested while one was still in progress, and the viva froze. Fixed with a reply queue. The "Done speaking" button was added |
+| **T5** Saved attempts and privacy (test first) | Reopen after refresh; owner only | Refresh restores it; user B is denied; rules tests pass | 4 rules tests on the emulator. Rules deployed. The owner's id is in the link, so user B sees "Permission denied" |
+| **T6** Revision point (test first) | One point cited to a page | A missed sulfonamide check cites page 6; an unsupported gap gives "No support found" | The quote check has 7 tests. `gpt-4.1-mini` misjudged gaps, so both text calls use `gpt-4.1` |
+| **T7** Latency and the three checks | Measure a voice turn; record the checks | Numbers and checks recorded | One sample read 298 s: the timer survived an unanswered turn. Fixed. The model once ended without a follow-up, so the end is now enforced in code |
+| **T8** Stop | Tag and push | `four-hour-mark` on GitHub | Status note written |
 
-### T2 Case core, test first (25 min) · skill: `tdd`
-- `data/case-ea-viva-001.json` (unchanged copy). zod schema. Loaded on every call.
-- `findings.ts`: `lookupFinding(id)` and `formatFinding(finding)` returning `{display, spoken, available, reason}`.
-- Tests: all 24 findings format without error; `iop_right` → "58 mmHg", right eye, Goldmann 23:55; `iop_left` → 18; pupil shows "5 mm" once; VA shows "6/36 Snellen" (unit added only to bare measurements); `rapd` is unavailable with its reason although `value` is set; `gonio_right` → "Not available: No view: corneal oedema"; unknown id → "not part of this case".
-- **Done when:** `pnpm test` is green.
+## Timeline (25 Nov 2026, PKT)
 
-### T3 Voice session (50 min)
-- Server function `mintVoiceToken`: verify ID token with `jose`; read case; build instructions with history, diagnosis, key points and follow-up ideas, **no finding values**; tools `get_finding(finding_id: enum of ids + not_in_case)` and `end_viva`; server VAD; input transcription on; return ephemeral key + findings.
-- Browser: `RTCPeerConnection`, mic track, remote audio element, events data channel.
-- On a `get_finding` call: run the formatter, send the function output with the exact `spoken` text, ask for a response, render the card from the formatter result.
-- Transcript list from transcript events. Turn indicator state machine: Listening → Thinking → Examiner speaking → Your turn.
-- Typed fallback: text box sends a user message over the data channel.
-- **Done when:** saying "right eye pressure" plays and shows 58 mmHg for the right eye; "right gonioscopy" says not available with the reason; the indicator changes with each phase.
+| Time | Commit |
+|---|---|
+| 15:25 | Setup before the clock (tag `four-hour-start`) |
+| 15:31 | T1 |
+| 15:36 | T2 |
+| 16:22 / 16:33 | T3 / T3 listening and connection fixes |
+| 17:10 | T4 |
+| 17:28 | T5 |
+| 17:41 | T6 |
+| 18:16 | T7 |
+| 18:17 | T8 (tag `four-hour-mark`): **2 h 52 min** |
 
-### T4 Follow-up and end of viva (15 min)
-- Instructions: after diagnosis and management, ask exactly one follow-up aimed at a gap in that answer, then call `end_viva`.
-- `MAX_FOLLOW_UPS = 1` in config; app counts follow-ups and ends the session on `end_viva`.
-- **Done when:** one follow-up is asked, then the session closes and the results view opens.
+## After the clock
 
-### T5 Saved attempts and privacy (30 min) · skill: `tdd` for rules
-- Create `users/{uid}/attempts/{id}` at start; update after every turn (turns, revealed findings, latency samples).
-- `/attempts` list and `/attempts/$id` view (transcript, revealed cards, revision point).
-- `firestore.rules`: owner only. Rules tests on the emulator: A reads own → allowed; B reads A → denied; signed out → denied.
-- **Done when:** refresh restores the attempt; user B gets "permission denied" on A's link; rules tests pass.
-
-### T6 Revision point with citation (45 min) · skill: `tdd` for the substring check
-- `scripts/prep-note.ts` (`pnpm prep:note`): pdfjs text per page, footer page check, paragraph chunks that never cross a page, embeddings, write `data/note-index.json`.
-- Server function `makeRevisionPoint`: verify ID token; LLM call 1 finds the biggest gap against the key points and writes a query; rank chunks by cosine + BM25, keep top 4; LLM call 2 (temperature 0, JSON) returns `supported, point, page, excerpt`; code checks the excerpt is a verbatim substring of a retrieved chunk on that page (whitespace and hyphen breaks normalised); else "No support found in the note".
-- Show on the results view and save to the attempt with `retrievedPages`.
-- **Done when:** a transcript that misses the sulfonamide check cites page 6 with a matching excerpt; an off-topic transcript shows "No support found".
-
-### T7 Latency and the three checks (20 min)
-- Log `performance.now()` at `speech_stopped` and at `output_audio_buffer.started`; save per turn.
-- Run 10 voice turns. Run the three checks by voice and note observed results.
-- `pnpm check` runs the unit, rules and citation checks.
-
-### T8 Stop and snapshot (5 min)
-- Commit, `git tag four-hour-mark`, push. Write three lines: what works, what does not, where it stopped.
-
-**Buffer: 20 min.**
-
-### Cut rules inside the session
-- T3 over 70 min → drop typed fallback, keep everything else.
-- Behind at 3:00 → T6 uses BM25 only (no embeddings).
-- Never cut: T2 tests, owner-only rules, the citation substring check, the T8 tag.
-
-## After the clock (reported separately)
-- **A1 Write-up (60 min).** README: setup and run steps; status at `four-hour-mark` and total time; model choice and Gemini Live as the alternative; latency method and numbers; the three checks with expected and observed results, retrieved pages and the cited passage; note prep and passage selection; one AI-tool example (formatter written with Claude Code, verified by T2 tests); one improvement and why. Repo `CLAUDE.md` for their Claude Code (skill: `writing-for-agents`).
-- **A2 Deploy (30 min).** Cloudflare Workers config, `wrangler secret put`, add the workers.dev domain to Firebase authorized domains, smoke test sign-in and one finding.
-- **A3 Extras on branch `after-four-hours` (optional).** Routing eval (30 phrases incl. left/right), citation eval (6 answers), Playwright e2e in text mode, 20-turn latency, barge-in, an "I'm done" button to end a spoken answer early. Review with `code-review` before merging.
-- **A4 Final docs (45 min).** Replace working notes with clean project docs: `docs/architecture.md` (system diagram and one finding turn), `docs/tickets.md` (tickets and why the work was split this way), `docs/decisions.md` (model choice and alternative, auth, deploy). Remove personal notes and HTML drafts; `planning/` stays out of git.
-- **Submit.** Email the repo link, live link and write-up to team@eye.academy before 04:59 PKT, with an AI usage screenshot.
+- Response times removed from the screen. They are still saved and logged.
+- A favicon.
+- The README in the brief's order, `CLAUDE.md`, and these docs.
+- **Pending:** deploy to Cloudflare Workers, and an end-to-end test on the Firebase emulators.

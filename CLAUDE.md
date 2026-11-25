@@ -49,6 +49,8 @@ Spoken ophthalmology viva: TanStack Start + Firebase Auth/Firestore + OpenAI Rea
 
 ## Deeper docs
 
+- `docs/architecture.md`: the system, one finding turn, data and security.
+- `docs/decisions.md`: each design choice and why; read before changing one.
 - `docs/checks.md`: the three checks, expected vs observed, and how to repeat them.
 - `docs/note-page-map.md`: what each PDF page holds, and the distractor pages.
-- `docs/tickets.md`: how the build was split, and why.
+- `docs/tickets.md`: how the build was split, and what happened in each ticket.

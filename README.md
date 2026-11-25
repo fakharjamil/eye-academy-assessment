@@ -92,6 +92,8 @@ flowchart LR
 - **Saved attempts.** The transcript, findings, follow-up and revision point are saved after every turn at `users/{uid}/attempts/{id}`. Only the owner can read them; another user gets "Permission denied".
 - **The OpenAI key** stays on the server. The browser gets a 10-minute key, and only after its sign-in is verified.
 
+More detail: [`docs/architecture.md`](docs/architecture.md) (diagrams, data, security), [`docs/decisions.md`](docs/decisions.md) (each choice and why), [`docs/tickets.md`](docs/tickets.md) (how the work was split).
+
 ## Model choice
 
 **Voice: OpenAI Realtime (`gpt-realtime-2.1`).**
@@ -191,5 +193,5 @@ src/attempts/    saving and loading attempts
 src/routes/      login, viva, attempts list, attempt page
 scripts/         prep-note, check-findings, check-citation
 tests/rules/     Firestore rules tests (emulator)
-docs/            checks, page map, tickets, status at four hours
+docs/            architecture, decisions, tickets, checks, note page map, Realtime notes
 ```
