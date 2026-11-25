@@ -9,6 +9,8 @@ A short spoken ophthalmology viva:
 
 Built with TanStack Start, Firebase Auth, Firestore and the OpenAI Realtime API.
 
+**Live demo:** https://eye-academy-viva.eye-academy-viva.workers.dev (test login in the submission email). Use Chrome and allow the microphone.
+
 ![The viva page before starting](docs/screenshots/viva-start.png)
 
 ## Status after four hours
@@ -23,7 +25,7 @@ Built with TanStack Start, Firebase Auth, Firestore and the OpenAI Realtime API.
   - private saved attempts
   - cited revision point
 - **Where it stopped:** after the three checks. It was not deployed. The last two fixes passed their unit tests but were not re-tested by voice.
-- **After the clock:** response times removed from the screen (still saved), a favicon, and this README.
+- **After the clock:** deployed to Cloudflare Workers, response times removed from the screen (still saved), a favicon, and these docs.
 
 Details: [`docs/status-four-hour-mark.md`](docs/status-four-hour-mark.md).
 
@@ -56,6 +58,7 @@ Details: [`docs/status-four-hour-mark.md`](docs/status-four-hour-mark.md).
 | `pnpm check:findings` | Checks 1 and 2 (no API key needed) |
 | `pnpm check:citation` | Check 3, using the real models |
 | `pnpm prep:note` | Rebuilds the reference note index after the PDF changes |
+| `pnpm run deploy` | Builds and deploys to Cloudflare Workers (first `wrangler login`, `wrangler secret put OPENAI_API_KEY`, and add the workers.dev domain to Firebase authorized domains) |
 
 ## How it works
 
@@ -179,7 +182,6 @@ I built this with Claude Code.
 - A long pause can end the trainee's turn early. **Done speaking** avoids it.
 - Medical words are sometimes misheard.
 - There is one case and no case picker.
-- It is not deployed yet. `wrangler.jsonc` is ready for Cloudflare Workers.
 
 ## Project layout
 

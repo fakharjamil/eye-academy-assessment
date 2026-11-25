@@ -50,4 +50,5 @@
 - Response times removed from the screen. They are still saved and logged.
 - A favicon.
 - The README in the brief's order, `CLAUDE.md`, and these docs.
-- **Pending:** deploy to Cloudflare Workers, and an end-to-end test on the Firebase emulators.
+- Deployed to Cloudflare Workers.
+- **Next:** an end-to-end test on the Firebase emulators.
