@@ -44,7 +44,6 @@ function VivaPage() {
   })
   const revision = useRevisionPoint(phase === 'ended', attemptId, turns)
   const live = !['idle', 'ended', 'error', 'connecting'].includes(phase)
-  const lastLatency = latency.at(-1)
 
   return (
     <div className="space-y-4">
@@ -96,9 +95,6 @@ function VivaPage() {
               >
                 {copied ?? 'Copy debug log'}
               </button>
-            )}
-            {lastLatency && (
-              <span className="text-xs text-muted-foreground">Last reply started after {lastLatency.ms} ms</span>
             )}
           </div>
           {live && micName && <MicMeter name={micName} level={micLevel} />}

@@ -35,7 +35,8 @@ function AttemptPage() {
             {attempt.followUps[0] || 'None asked.'}
           </div>
           <RevisionCard revision={attempt.revision} />
-          <LatencySummary samples={attempt.latency} />
+          {/* Developer view only: trainees never see timings. The data is always saved with the attempt. */}
+          {import.meta.env.DEV && <LatencySummary samples={attempt.latency} />}
         </CardContent>
       </Card>
       <div className="grid gap-4 md:grid-cols-[1fr_16rem]">

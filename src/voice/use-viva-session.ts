@@ -213,7 +213,12 @@ export function useVivaSession() {
           // ...and stops when the examiner's audio starts playing.
           examinerSpeaking.current = true
           const t = timer.current
-          if (t) setLatency((prev) => [...prev, { ms: Math.round(performance.now() - t.start), at: Date.now(), kind: t.kind, finding: t.finding }])
+          if (t) {
+            const sample = { ms: Math.round(performance.now() - t.start), at: Date.now(), kind: t.kind, finding: t.finding }
+            setLatency((prev) => [...prev, sample])
+            logEvent('in', { type: 'latency', name: `${sample.ms}ms ${sample.kind}${sample.finding ? ' finding' : ''}` })
+            if (import.meta.env.DEV) console.info('[latency]', sample)
+          }
           timer.current = null
           setPhase('examiner')
           break
