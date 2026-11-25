@@ -25,9 +25,9 @@ Each entry covers the choice, why it was made, and the alternative that was cons
 
 ## 5. Semantic listening, and no manual "done" button
 
-- **Why:** with plain silence detection, a pause to think ended the trainee's turn. Semantic detection with low eagerness waits for a finished thought.
+- **Why:** with plain silence detection, a pause to think ended the trainee's turn. Semantic detection waits for a finished thought. Medium eagerness: low eagerness waited so long (up to about 8 s) that trainees repeated themselves.
 - **Tried and removed:** a "Done speaking" button. Pressed while OpenAI was already starting a reply, it caused double replies and could leave a reply stuck. Automatic detection alone is more reliable.
-- **Trade-off:** after an answer that sounds unfinished, the examiner can wait a few seconds.
+- **Trade-off:** after an answer that sounds unfinished, the examiner can wait a few seconds; a long pause can still end a turn.
 
 ## 6. The follow-up and the end are enforced in code
 

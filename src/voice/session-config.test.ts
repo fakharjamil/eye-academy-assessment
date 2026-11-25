@@ -21,7 +21,7 @@ describe('buildSessionConfig', () => {
   })
 
   it('waits for the trainee to finish a thought, and transcribes them', () => {
-    expect(config.audio.input.turn_detection).toMatchObject({ type: 'semantic_vad', eagerness: 'low' })
+    expect(config.audio.input.turn_detection).toMatchObject({ type: 'semantic_vad', eagerness: 'medium' })
     expect(config.audio.input.transcription.model).toBeTruthy()
   })
 })
