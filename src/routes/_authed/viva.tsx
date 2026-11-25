@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/com
 import { FindingCard, MicMeter, Transcript, TurnIndicator, TypedInput } from '#/components/viva/viva-parts'
 import { loadCase } from '#/case/case'
 import { useVivaSession } from '#/voice/use-viva-session'
+import { useFollowLatest } from '#/components/viva/use-follow-latest'
 
 export const Route = createFileRoute('/_authed/viva')({
   component: VivaPage,
@@ -43,6 +44,8 @@ function VivaPage() {
   })
   const revision = useRevisionPoint(phase === 'ended', attemptId, turns)
   const live = !['idle', 'ended', 'error', 'connecting'].includes(phase)
+  const lastTurn = turns.at(-1)
+  const transcriptEnd = useFollowLatest(live, `${turns.length}:${lastTurn?.text.length ?? 0}:${revealed.length}`)
 
   return (
     <div className="space-y-4">
@@ -124,6 +127,7 @@ function VivaPage() {
         <section aria-label="Transcript">
           <h2 className="mb-2 text-sm font-semibold">Transcript</h2>
           <Transcript turns={turns} />
+          <div ref={transcriptEnd} aria-hidden />
         </section>
         <section aria-label="Findings revealed">
           <h2 className="mb-2 text-sm font-semibold">Findings</h2>
