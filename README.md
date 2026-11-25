@@ -5,9 +5,13 @@ EA-VIVA-001, gives a diagnosis and management, answers one follow-up, and gets o
 to a page of the glaucoma reference note. Built with TanStack Start, Firebase Auth, Firestore and the
 OpenAI Realtime API.
 
-![A saved attempt: revision point cited to page 4, transcript and finding cards](docs/screenshots/attempt.png)
+![The viva page before starting: case title, turn indicator and Start viva](docs/screenshots/viva-start.png)
 
-*A saved attempt reopened after the viva (development build, which also shows response times).*
+![A voice run: the examiner reads each finding back, and the cards show the eye, value and unit](docs/screenshots/findings.png)
+
+*A real voice run. "CT head" was transcribed as "city head" and still answered correctly.*
+
+![Revision point after the viva, quoting page 4 of the reference note](docs/screenshots/revision-point.png)
 
 ## Status
 
