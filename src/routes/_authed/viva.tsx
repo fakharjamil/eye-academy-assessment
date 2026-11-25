@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useAttemptRecorder } from '#/attempts/use-attempt-recorder'
 import { useRevisionPoint } from '#/attempts/use-revision-point'
@@ -30,7 +31,9 @@ function VivaPage() {
     stop,
     sendText,
     finishSpeaking,
+    copyDebugLog,
   } = useVivaSession()
+  const [copied, setCopied] = useState<string | null>(null)
   const { user } = useAuth()
   const { attemptId, saveError } = useAttemptRecorder(user?.uid, caseFile.case_id, {
     phase,
@@ -84,6 +87,15 @@ function VivaPage() {
               </>
             ) : (
               <Button onClick={start}>{phase === 'idle' ? 'Start viva' : 'Start again'}</Button>
+            )}
+            {import.meta.env.DEV && phase !== 'idle' && (
+              <button
+                type="button"
+                className="text-xs text-muted-foreground underline"
+                onClick={async () => setCopied(`Copied ${await copyDebugLog()} events`)}
+              >
+                {copied ?? 'Copy debug log'}
+              </button>
             )}
             {lastLatency && (
               <span className="text-xs text-muted-foreground">Last reply started after {lastLatency.ms} ms</span>

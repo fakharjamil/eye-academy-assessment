@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getFinding, type FindingResult } from '#/case/findings'
 import { getFirebaseAuth } from '#/lib/firebase'
 import { mintVoiceToken } from '#/server/voice'
-import { decideFollowUp } from './follow-up'
+import { decideEndViva, decideFollowUp } from './follow-up'
 
 /** Whose turn it is. Drives the indicator so the trainee always knows when to speak. */
 export type Phase =
@@ -44,14 +44,32 @@ export function useVivaSession() {
   const endRequested = useRef(false)
   const traineeSpeaking = useRef(false)
 
-  const send = useCallback((event: object) => {
-    if (channel.current?.readyState === 'open') channel.current.send(JSON.stringify(event))
+  // Dev aid: the last 300 events in and out, so a stuck session can be diagnosed from a paste.
+  const eventLog = useRef<string[]>([])
+  const sessionStart = useRef(0)
+  const logEvent = useCallback((direction: 'in' | 'out', event: { type: string; [key: string]: any }) => {
+    if (event.type.endsWith('.delta')) return
+    const detail = event.name ?? event.error?.message ?? event.response?.status ?? event.transcript?.slice(0, 60) ?? ''
+    const t = Math.round(performance.now() - sessionStart.current)
+    eventLog.current = [...eventLog.current.slice(-299), `${t}ms ${direction} ${event.type} ${detail}`.trim()]
   }, [])
+  const copyDebugLog = useCallback(async () => {
+    const text = eventLog.current.join('\n')
+    await navigator.clipboard.writeText(text)
+    return eventLog.current.length
+  }, [])
+
+  const send = useCallback((event: { type: string; [key: string]: any }) => {
+    logEvent('out', event)
+    if (channel.current?.readyState === 'open') channel.current.send(JSON.stringify(event))
+    else logEvent('out', { type: 'DROPPED (channel not open)' })
+  }, [logEvent])
 
   // OpenAI allows one response at a time. A tool result arrives while its response is still open,
   // so asking for the next reply must wait until that response is done.
   const responseActive = useRef(false)
   const responseQueued = useRef(false)
+  const responseHadOutput = useRef(false)
   const requestResponse = useCallback(() => {
     if (responseActive.current) {
       responseQueued.current = true
@@ -127,8 +145,13 @@ export function useVivaSession() {
         send({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id, output: decision.output } })
         requestResponse()
       } else if (name === 'end_viva') {
+        const decision = decideEndViva(followUpCount.current)
+        send({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id, output: decision.output } })
+        if (!decision.allowed) {
+          requestResponse() // the examiner continues and asks the follow-up first
+          return
+        }
         endRequested.current = true
-        send({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id, output: '{"ok":true}' } })
         if (!examinerSpeaking.current) finish()
       }
     },
@@ -137,19 +160,28 @@ export function useVivaSession() {
 
   const handleEvent = useCallback(
     (event: ServerEvent) => {
-      if (import.meta.env.DEV && !event.type.endsWith('.delta')) console.debug('[realtime]', event.type)
+      logEvent('in', event)
       switch (event.type) {
         case 'response.created':
           responseActive.current = true
+          responseHadOutput.current = false
+          break
+        case 'response.content_part.added':
+        case 'response.function_call_arguments.delta':
+          responseHadOutput.current = true
           break
         case 'response.done':
           responseActive.current = false
+          // A reply with no voice and no tool call (e.g. cancelled) must not keep the timer running.
+          if (!responseHadOutput.current) timer.current = null
           if (responseQueued.current) {
             responseQueued.current = false
             requestResponse()
           }
           break
         case 'input_audio_buffer.speech_started':
+          // A new trainee turn: any timer from an unanswered earlier turn is meaningless now.
+          timer.current = null
           traineeSpeaking.current = true
           setPhase('trainee')
           break
@@ -193,6 +225,7 @@ export function useVivaSession() {
           else setPhase((p) => (p === 'examiner' ? 'your-turn' : p))
           break
         case 'response.function_call_arguments.done':
+          responseHadOutput.current = true
           handleToolCall(event)
           break
         case 'error':
@@ -201,13 +234,18 @@ export function useVivaSession() {
             // Not the trainee's problem: retry once the current response finishes.
             responseActive.current = true
             responseQueued.current = true
+          } else if (
+            event.error?.code === 'input_audio_buffer_commit_empty' ||
+            /buffer too small/i.test(event.error?.message ?? '')
+          ) {
+            // "Done speaking" pressed just after the listener had already ended the turn: nothing to do.
           } else {
             setError(event.error?.message ?? 'Voice service error')
           }
           break
       }
     },
-    [finish, handleToolCall, requestResponse, upsertTurn],
+    [finish, handleToolCall, logEvent, requestResponse, upsertTurn],
   )
 
   const start = useCallback(async () => {
@@ -222,6 +260,8 @@ export function useVivaSession() {
     responseActive.current = false
     responseQueued.current = false
     traineeSpeaking.current = false
+    eventLog.current = []
+    sessionStart.current = performance.now()
     setPhase('connecting')
     try {
       const user = getFirebaseAuth().currentUser
@@ -234,6 +274,7 @@ export function useVivaSession() {
       connection.onconnectionstatechange = () => {
         if (pc.current !== connection) return
         const state = connection.connectionState
+        logEvent('in', { type: `connection.${state}` })
         if (state === 'disconnected') setNotice('Connection unstable. Trying to reconnect…')
         if (state === 'connected') setNotice(null)
         if (state === 'failed') {
@@ -281,7 +322,7 @@ export function useVivaSession() {
       setError(err instanceof Error ? err.message : 'Could not start the viva')
       setPhase('error')
     }
-  }, [handleEvent, requestResponse, teardown])
+  }, [handleEvent, logEvent, requestResponse, teardown])
 
   /** Typed fallback: same conversation, no microphone needed. */
   const sendText = useCallback(
@@ -339,6 +380,7 @@ export function useVivaSession() {
     stop: finish,
     sendText,
     finishSpeaking,
+    copyDebugLog,
   }
 }
 

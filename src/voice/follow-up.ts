@@ -16,3 +16,16 @@ export function decideFollowUp(askedSoFar: number, max = MAX_FOLLOW_UPS) {
     }),
   }
 }
+
+/** The viva may only end after the one follow-up: the brief asks for a spoken follow-up every time. */
+export function decideEndViva(followUpsAsked: number, max = MAX_FOLLOW_UPS) {
+  if (followUpsAsked >= max) return { allowed: true, output: JSON.stringify({ ok: true }) }
+  return {
+    allowed: false,
+    output: JSON.stringify({
+      ok: false,
+      instruction:
+        'Do not end yet. If the trainee has given a diagnosis and management, call ask_follow_up with one follow-up question aimed at a gap in their answer. Otherwise ask for their diagnosis and management.',
+    }),
+  }
+}

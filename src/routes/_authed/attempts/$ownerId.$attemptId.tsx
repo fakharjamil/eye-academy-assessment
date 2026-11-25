@@ -2,7 +2,7 @@ import { Link, createFileRoute, type ErrorComponentProps } from '@tanstack/react
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { getAttempt, isPermissionDenied } from '#/attempts/attempts'
-import { RevisionCard, StatusLabel, formatDate } from '#/components/viva/attempt-parts'
+import { LatencySummary, RevisionCard, StatusLabel, formatDate } from '#/components/viva/attempt-parts'
 import { FindingCard, Transcript } from '#/components/viva/viva-parts'
 
 // The owner's uid is in the URL so that a shared link really asks Firestore for that user's
@@ -35,6 +35,7 @@ function AttemptPage() {
             {attempt.followUps[0] || 'None asked.'}
           </div>
           <RevisionCard revision={attempt.revision} />
+          <LatencySummary samples={attempt.latency} />
         </CardContent>
       </Card>
       <div className="grid gap-4 md:grid-cols-[1fr_16rem]">
