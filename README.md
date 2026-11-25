@@ -163,18 +163,22 @@ I built this with Claude Code.
 1. **Built: the follow-up is enforced in code.** The brief requires one spoken follow-up, and in one test run the model ended without asking it. A prompt can't guarantee that, so now the app allows exactly one, and refuses to end the viva before it. Both rules are tested.
 2. **Next: an end-to-end test on the Firebase emulators.** Today the signed-in voice path is checked by hand. A Playwright test using fake users and the text box would make the checks one command: sign in, ask "right eye pressure", see 58 mmHg on the right eye, finish, reopen, and see a second user denied. That makes it safe to change the prompt or the model.
 
-## Notes
+## Making a change
 
-- **Walkthrough changes:**
-  - Case values: edit `data/case-ea-viva-001.json`, then run `pnpm check:findings`.
-  - Follow-up count: `MAX_FOLLOW_UPS` in `src/voice/session-config.ts`.
-  - The PDF: run `pnpm prep:note`, then `pnpm check:citation`.
-  - A dev-only **Copy debug log** link on the viva page shows every voice event with timings.
-- **Limitations:**
-  - A long pause can end the trainee's turn early. **Done speaking** avoids it.
-  - Medical words are sometimes misheard.
-  - There is one case and no case picker.
-  - It is not deployed yet. `wrangler.jsonc` is ready for Cloudflare Workers.
+| To change | Edit | Then run |
+|---|---|---|
+| A finding (value, unit, or available / not available) | `data/case-ea-viva-001.json` | `pnpm check:findings` shows what the examiner will now say |
+| How many follow-up questions | `MAX_FOLLOW_UPS` in `src/voice/session-config.ts` | `pnpm test` |
+| The reference PDF | `data/glaucoma-note.pdf` | `pnpm prep:note`, then `pnpm check:citation` |
+
+A dev-only **Copy debug log** link on the viva page copies every voice event with timings, for debugging.
+
+## Limitations
+
+- A long pause can end the trainee's turn early. **Done speaking** avoids it.
+- Medical words are sometimes misheard.
+- There is one case and no case picker.
+- It is not deployed yet. `wrangler.jsonc` is ready for Cloudflare Workers.
 
 ## Project layout
 
