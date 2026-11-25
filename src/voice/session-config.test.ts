@@ -13,11 +13,11 @@ describe('buildSessionConfig', () => {
     }
   })
 
-  it('offers get_finding with every finding id plus not_in_case, and end_viva', () => {
+  it('offers get_finding with every finding id plus not_in_case, ask_follow_up and end_viva', () => {
     const getFinding = config.tools.find((t) => t.name === 'get_finding')!
     const ids = getFinding.parameters.properties.finding_id?.enum
     expect(ids).toEqual([...caseFile.findings.map((f) => f.id), 'not_in_case'])
-    expect(config.tools.map((t) => t.name)).toContain('end_viva')
+    expect(config.tools.map((t) => t.name)).toEqual(['get_finding', 'ask_follow_up', 'end_viva'])
   })
 
   it('waits for the trainee to finish a thought, and transcribes them', () => {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getFinding, type FindingResult } from '#/case/findings'
 import { getFirebaseAuth } from '#/lib/firebase'
 import { mintVoiceToken } from '#/server/voice'
+import { decideFollowUp } from './follow-up'
 
 /** Whose turn it is. Drives the indicator so the trainee always knows when to speak. */
 export type Phase =
@@ -37,12 +38,28 @@ export function useVivaSession() {
   const mic = useRef<MediaStream | null>(null)
   const audio = useRef<HTMLAudioElement | null>(null)
   const timer = useRef<{ start: number; kind: 'voice' | 'typed'; finding: boolean } | null>(null)
+  const [followUps, setFollowUps] = useState<string[]>([])
+  const followUpCount = useRef(0)
   const examinerSpeaking = useRef(false)
   const endRequested = useRef(false)
+  const traineeSpeaking = useRef(false)
 
   const send = useCallback((event: object) => {
     if (channel.current?.readyState === 'open') channel.current.send(JSON.stringify(event))
   }, [])
+
+  // OpenAI allows one response at a time. A tool result arrives while its response is still open,
+  // so asking for the next reply must wait until that response is done.
+  const responseActive = useRef(false)
+  const responseQueued = useRef(false)
+  const requestResponse = useCallback(() => {
+    if (responseActive.current) {
+      responseQueued.current = true
+      return
+    }
+    responseActive.current = true
+    send({ type: 'response.create' })
+  }, [send])
 
   const upsertTurn = useCallback((id: string, role: Turn['role'], update: (text: string) => string, final: boolean) => {
     setTurns((prev) => {
@@ -94,24 +111,50 @@ export function useVivaSession() {
             output: JSON.stringify({ spoken: result.spoken, available: result.available }),
           },
         })
-        send({ type: 'response.create' })
+        requestResponse()
+      } else if (name === 'ask_follow_up') {
+        const decision = decideFollowUp(followUpCount.current)
+        if (decision.allowed) {
+          followUpCount.current += 1
+          let question = ''
+          try {
+            question = String(JSON.parse(event.arguments).question ?? '')
+          } catch {
+            // record an empty question rather than fail the turn
+          }
+          setFollowUps((prev) => [...prev, question])
+        }
+        send({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id, output: decision.output } })
+        requestResponse()
       } else if (name === 'end_viva') {
         endRequested.current = true
         send({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id, output: '{"ok":true}' } })
         if (!examinerSpeaking.current) finish()
       }
     },
-    [finish, send],
+    [finish, requestResponse, send],
   )
 
   const handleEvent = useCallback(
     (event: ServerEvent) => {
       if (import.meta.env.DEV && !event.type.endsWith('.delta')) console.debug('[realtime]', event.type)
       switch (event.type) {
+        case 'response.created':
+          responseActive.current = true
+          break
+        case 'response.done':
+          responseActive.current = false
+          if (responseQueued.current) {
+            responseQueued.current = false
+            requestResponse()
+          }
+          break
         case 'input_audio_buffer.speech_started':
+          traineeSpeaking.current = true
           setPhase('trainee')
           break
         case 'input_audio_buffer.speech_stopped':
+          traineeSpeaking.current = false
           // Latency timer starts when the trainee stops speaking.
           timer.current = { start: performance.now(), kind: 'voice', finding: false }
           setPhase('thinking')
@@ -154,11 +197,17 @@ export function useVivaSession() {
           break
         case 'error':
           console.error('Realtime error', event.error)
-          setError(event.error?.message ?? 'Voice service error')
+          if (event.error?.code === 'conversation_already_has_active_response') {
+            // Not the trainee's problem: retry once the current response finishes.
+            responseActive.current = true
+            responseQueued.current = true
+          } else {
+            setError(event.error?.message ?? 'Voice service error')
+          }
           break
       }
     },
-    [finish, handleToolCall, upsertTurn],
+    [finish, handleToolCall, requestResponse, upsertTurn],
   )
 
   const start = useCallback(async () => {
@@ -167,7 +216,12 @@ export function useVivaSession() {
     setTurns([])
     setRevealed([])
     setLatency([])
+    setFollowUps([])
+    followUpCount.current = 0
     endRequested.current = false
+    responseActive.current = false
+    responseQueued.current = false
+    traineeSpeaking.current = false
     setPhase('connecting')
     try {
       const user = getFirebaseAuth().currentUser
@@ -209,7 +263,7 @@ export function useVivaSession() {
       dc.onmessage = (e) => handleEvent(JSON.parse(e.data))
       dc.onopen = () => {
         // The examiner opens with the case prompt (see instructions).
-        send({ type: 'response.create' })
+        requestResponse()
         setPhase('thinking')
       }
 
@@ -227,7 +281,7 @@ export function useVivaSession() {
       setError(err instanceof Error ? err.message : 'Could not start the viva')
       setPhase('error')
     }
-  }, [handleEvent, send, teardown])
+  }, [handleEvent, requestResponse, teardown])
 
   /** Typed fallback: same conversation, no microphone needed. */
   const sendText = useCallback(
@@ -236,12 +290,26 @@ export function useVivaSession() {
       if (!message) return
       upsertTurn(`typed-${Date.now()}`, 'trainee', () => message, true)
       send({ type: 'conversation.item.create', item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: message }] } })
-      send({ type: 'response.create' })
+      requestResponse()
       timer.current = { start: performance.now(), kind: 'typed', finding: false }
       setPhase('thinking')
     },
-    [send, upsertTurn],
+    [requestResponse, send, upsertTurn],
   )
+
+  /**
+   * "Done speaking": ends the trainee's turn now instead of waiting for the listener to decide.
+   * Also nudges the examiner if a reply never came.
+   */
+  const finishSpeaking = useCallback(() => {
+    if (traineeSpeaking.current) {
+      traineeSpeaking.current = false
+      send({ type: 'input_audio_buffer.commit' })
+      timer.current = { start: performance.now(), kind: 'voice', finding: false }
+    }
+    setPhase('thinking')
+    requestResponse()
+  }, [requestResponse, send])
 
   useEffect(() => teardown, [teardown])
 
@@ -257,7 +325,21 @@ export function useVivaSession() {
     }
   }, [])
 
-  return { phase, turns, revealed, latency, error, notice, micName, micLevel, start, stop: finish, sendText }
+  return {
+    phase,
+    turns,
+    revealed,
+    latency,
+    followUps,
+    error,
+    notice,
+    micName,
+    micLevel,
+    start,
+    stop: finish,
+    sendText,
+    finishSpeaking,
+  }
 }
 
 /** Reports the microphone input level (0–1) about ten times a second, so silence is visible. */

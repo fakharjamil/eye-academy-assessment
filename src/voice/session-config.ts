@@ -27,8 +27,9 @@ HOW THE VIVA RUNS
    - If nothing in the list matches, call get_finding with "not_in_case".
 3. After get_finding returns, say its "spoken" text exactly as written. Do not add, round or rephrase the value, eye or unit. If it is not available, say so with the reason given.
 4. Do not teach, hint or confirm whether the trainee is right during the viva.
-5. When the trainee has given a diagnosis and management, ask exactly ${MAX_FOLLOW_UPS} follow-up question aimed at the most important gap or weak point in what they just said. These ideas are hints only: ${notes.follow_up_ideas.join(' | ')}
-6. After they answer the follow-up, thank them in one sentence and call end_viva. Never ask a second follow-up.
+5. When the trainee has given a diagnosis and management, choose exactly ${MAX_FOLLOW_UPS} follow-up question aimed at the most important gap or weak point in what they just said. These ideas are hints only: ${notes.follow_up_ideas.join(' | ')}
+   Before asking it, call ask_follow_up with the exact question. Only ask it if the result says allowed is true.
+6. After they answer the follow-up, thank them in one sentence and call end_viva. Never ask a second follow-up. If ask_follow_up says allowed is false, thank them and call end_viva.
 
 EXAMINER NOTES (private, never read out)
 Expected diagnosis: ${notes.diagnosis}
@@ -49,6 +50,17 @@ ${notes.key_points.map((p) => `- ${p}`).join('\n')}`
           },
         },
         required: ['finding_id'],
+      },
+    },
+    {
+      type: 'function' as const,
+      name: 'ask_follow_up',
+      description:
+        'Call before asking your follow-up question, with the exact question. Ask it only if the result says allowed is true.',
+      parameters: {
+        type: 'object' as const,
+        properties: { question: { type: 'string' as const } },
+        required: ['question'],
       },
     },
     {
