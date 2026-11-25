@@ -32,7 +32,7 @@ Deadline: 25 Nov 23:59 GMT = **26 Nov 04:59 PKT**.
 ### T2 Case core, test first (25 min) · skill: `tdd`
 - `data/case-ea-viva-001.json` (unchanged copy). zod schema. Loaded on every call.
 - `findings.ts`: `lookupFinding(id)` and `formatFinding(finding)` returning `{display, spoken, available, reason}`.
-- Tests: all 24 findings format without error; `iop_right` → "58 mmHg", right eye, Goldmann 23:55; `iop_left` → 18; pupil shows "5 mm" once; VA shows "6/36 (Snellen)"; `rapd` is unavailable with its reason although `value` is set; `gonio_right` → "Not available: No view: corneal oedema"; unknown id → "not part of this case".
+- Tests: all 24 findings format without error; `iop_right` → "58 mmHg", right eye, Goldmann 23:55; `iop_left` → 18; pupil shows "5 mm" once; VA shows "6/36 Snellen" (unit added only to bare measurements); `rapd` is unavailable with its reason although `value` is set; `gonio_right` → "Not available: No view: corneal oedema"; unknown id → "not part of this case".
 - **Done when:** `pnpm test` is green.
 
 ### T3 Voice session (50 min)
